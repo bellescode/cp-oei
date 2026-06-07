@@ -105,7 +105,7 @@ def render() -> None:
 
             c_class.markdown("**Class**")
             if classification != "N/A":
-                c_class.markdown(badge(classification), unsafe_allow_html=True)
+                c_class.html(badge(classification))
             else:
                 c_class.caption("No scores yet")
 

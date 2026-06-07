@@ -18,7 +18,7 @@ from dashboard.theme import logo_lockup_html
 
 
 def _hero() -> None:
-    st.markdown(
+    st.html(
         f"""
         <div class="cp-topbar" style="border:none;margin-bottom:8px;">{logo_lockup_html()}</div>
         <div class="cp-hero">
@@ -26,8 +26,7 @@ def _hero() -> None:
           <p>The operational intelligence layer that exposes hidden execution risk
              before it becomes financially material.</p>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -159,7 +158,7 @@ def _totp_enroll_stage() -> None:
 
     svg = qr_svg(uri)
     if svg:
-        st.markdown(svg, unsafe_allow_html=True)
+        st.html(svg)
     st.caption("Can't scan? Enter this key manually:")
     st.code(secret, language=None)
 
@@ -229,10 +228,7 @@ def _forgot_flow() -> None:
 
 def render_login() -> None:
     """Render the full login screen. Hides the sidebar until authenticated."""
-    st.markdown(
-        "<style>[data-testid='stSidebar']{display:none;}</style>",
-        unsafe_allow_html=True,
-    )
+    st.html("<style>[data-testid='stSidebar']{display:none;}</style>")
     _hero()
     st.write("")
     left, _ = st.columns([1.1, 1])

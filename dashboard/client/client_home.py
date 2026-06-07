@@ -78,12 +78,11 @@ def render() -> None:
 
     hero, dims = st.columns([1, 2.4])
     with hero:
-        st.markdown(
+        st.html(
             f'<div class="cp-card" style="text-align:center;border-left-color:{NAVY};">'
             f'<div class="cp-stat-label">OEI Composite</div>'
             f'<div class="cp-stat">{current["oei_composite_score"]}</div>'
-            f'{badge(current["composite_class"])}</div>',
-            unsafe_allow_html=True,
+            f'{badge(current["composite_class"])}</div>'
         )
         if delta_caption:
             st.caption(delta_caption)

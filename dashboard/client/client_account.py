@@ -82,7 +82,7 @@ def _mfa_section() -> None:
     uri = auth.totp_provisioning_uri(email, secret)
     svg = qr_svg(uri)
     if svg:
-        st.markdown(svg, unsafe_allow_html=True)
+        st.html(svg)
     st.caption("Can't scan? Enter this key manually:")
     st.code(secret, language=None)
     code = st.text_input("Enter the 6-digit code from your app", key="acct_enroll_code")
@@ -111,15 +111,11 @@ def render() -> None:
 def render_forced_change() -> None:
     """Full-screen forced password change on first login (no sidebar)."""
     inject_brand_css()
-    st.markdown("<style>[data-testid='stSidebar']{display:none;}</style>", unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="cp-topbar" style="border:none;">{logo_lockup_html()}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
+    st.html("<style>[data-testid='stSidebar']{display:none;}</style>")
+    st.html(f'<div class="cp-topbar" style="border:none;">{logo_lockup_html()}</div>')
+    st.html(
         '<div class="cp-hero"><h1>Set your password</h1>'
-        '<p>For your security, please choose a new password before continuing to your portal.</p></div>',
-        unsafe_allow_html=True,
+        '<p>For your security, please choose a new password before continuing to your portal.</p></div>'
     )
     st.write("")
     st.session_state["_forced_change"] = True

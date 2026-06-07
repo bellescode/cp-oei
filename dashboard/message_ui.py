@@ -46,7 +46,7 @@ def render_thread(client_id: str, viewer_role: str, viewer_label: str, key_prefi
         for m in thread:
             mine = (m["sender_role"] == viewer_role)
             html += _bubble(m["sender_label"], m["body"], m["created_at"], mine)
-        st.markdown(html, unsafe_allow_html=True)
+        st.html(html)
 
     with st.form(f"{key_prefix}_compose", clear_on_submit=True):
         body = st.text_area("Your message", height=90, key=f"{key_prefix}_body")

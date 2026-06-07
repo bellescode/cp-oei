@@ -200,7 +200,7 @@ def render() -> None:
         status = client.get("status") or "active"
         label = f"{client['client_name']}  ·  {(client.get('engagement_type') or '').upper()}  ·  {status}"
         with st.expander(label, expanded=(cid == focus)):
-            st.markdown(badge(_RENEWAL_LABEL(client)), unsafe_allow_html=True)
+            st.html(badge(_RENEWAL_LABEL(client)))
             _edit_engagement(client)
             st.divider()
             _portal_account(client)

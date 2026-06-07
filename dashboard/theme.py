@@ -162,7 +162,7 @@ footer, #MainMenu {{ visibility: hidden; }}
 
 def inject_brand_css() -> None:
     """Inject the Criterion Partners CSS. Safe to call once per page render."""
-    st.markdown(_BRAND_CSS, unsafe_allow_html=True)
+    st.html(_BRAND_CSS)
 
 
 # ---------------------------------------------------------------------------
@@ -183,10 +183,9 @@ def logo_lockup_html() -> str:
 
 def top_bar(tagline: str = "Operational Executive Intelligence") -> None:
     """Render the branded top bar with logo and a right-aligned tagline."""
-    st.markdown(
+    st.html(
         f'<div class="cp-topbar">{logo_lockup_html()}'
-        f'<div class="cp-topbar-tag">{tagline}</div></div>',
-        unsafe_allow_html=True,
+        f'<div class="cp-topbar-tag">{tagline}</div></div>'
     )
 
 
@@ -195,7 +194,7 @@ def page_title(title: str, subtitle: str | None = None) -> None:
     html = f'<div class="cp-page-title">{title}</div>'
     if subtitle:
         html += f'<div class="cp-page-sub">{subtitle}</div>'
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
     st.write("")
 
 
@@ -213,9 +212,8 @@ def badge(label: str, palette: str = "band") -> str:
 def stat_card(label: str, value, accent: str | None = None) -> None:
     """Render a single branded stat card."""
     border = accent or GOLD
-    st.markdown(
+    st.html(
         f'<div class="cp-card" style="border-left-color:{border};">'
         f'<div class="cp-stat-label">{label}</div>'
-        f'<div class="cp-stat">{value}</div></div>',
-        unsafe_allow_html=True,
+        f'<div class="cp-stat">{value}</div></div>'
     )

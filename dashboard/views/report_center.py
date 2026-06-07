@@ -101,19 +101,16 @@ def render() -> None:
                 cperiod.caption(r["period_date"] or "")
 
                 if r["delivered"]:
-                    cstatus.markdown(
-                        '<span class="cp-badge" style="background:#E8F5E9;color:#2E862E;">Published</span>',
-                        unsafe_allow_html=True,
+                    cstatus.html(
+                        '<span class="cp-badge" style="background:#E8F5E9;color:#2E862E;">Published</span>'
                     )
                 elif r["file_path"]:
-                    cstatus.markdown(
-                        '<span class="cp-badge" style="background:#E3F2FD;color:#2E4A6A;">Finalized</span>',
-                        unsafe_allow_html=True,
+                    cstatus.html(
+                        '<span class="cp-badge" style="background:#E3F2FD;color:#2E4A6A;">Finalized</span>'
                     )
                 else:
-                    cstatus.markdown(
-                        '<span class="cp-badge" style="background:#FFFDE7;color:#856A00;">Draft</span>',
-                        unsafe_allow_html=True,
+                    cstatus.html(
+                        '<span class="cp-badge" style="background:#FFFDE7;color:#856A00;">Draft</span>'
                     )
 
                 file_path = r.get("file_path")

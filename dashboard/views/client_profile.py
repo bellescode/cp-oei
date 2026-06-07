@@ -155,12 +155,11 @@ def _scorecard(client: dict) -> dict | None:
     st.markdown("#### OEI Scorecard")
     big1, big2 = st.columns([1, 3])
     with big1:
-        st.markdown(
+        st.html(
             f'<div class="cp-card" style="text-align:center;border-left-color:{NAVY};">'
             f'<div class="cp-stat-label">Composite</div>'
             f'<div class="cp-stat">{current["oei_composite_score"]}</div>'
-            f'{badge(current["composite_class"])}</div>',
-            unsafe_allow_html=True,
+            f'{badge(current["composite_class"])}</div>'
         )
 
     table_rows = []
@@ -361,8 +360,7 @@ def _journal(cid: str) -> None:
         with st.container(border=True):
             st.markdown(
                 f"**{e['entry_date']}** | {e['entry_type']} | {e['program_reference']} "
-                f"{badge(e['materiality'], palette='soft')}",
-                unsafe_allow_html=True,
+                f"| Materiality: {e['materiality']}"
             )
             st.caption(e["intelligence_note"])
 
