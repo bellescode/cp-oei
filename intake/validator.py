@@ -317,47 +317,95 @@ class ValidationResult:
 # Internal validation helpers
 # ---------------------------------------------------------------------------
 
-def _check_date_value(value: Any) -> bool:
-    """
-    Return True if value is a non-null string parseable as YYYY-MM-DD,
-    or a datetime/date object (openpyxl may return these directly).
-
-    Args:
-        value: cell value from a pandas DataFrame.
-
-    Returns:
-        bool: True if the value is a valid date representation.
-    """
-    if pd.isna(value):
-        return False
-    if isinstance(value, datetime):
-        return True
-    if hasattr(value, "year"):  # date object
-        return True
-    try:
-        datetime.strptime(str(value).strip(), "%Y-%m-%d")
-        return True
-    except ValueError:
-        return False
+# Accepted date input formats. Excel stores dates as datetimes, so when the
+# workbook is read as strings the cells arrive as 'YYYY-MM-DD HH:MM:SS'. We
+# accept that and several other common human formats, normalizing all to
+# YYYY-MM-DD so clients are not forced to hand-format dates.
+_DATE_FORMATS = [
+    "%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d",
+    "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y",
+    "%d-%b-%Y", "%d %b %Y", "%b %d, %Y", "%B %d, %Y",
+]
 
 
-def _normalize_date_value(value: Any) -> str | None:
-    """
-    Convert a cell value to a YYYY-MM-DD string, or return None if null.
-
-    Args:
-        value: cell value that has already passed _check_date_value.
-
-    Returns:
-        str | None: ISO date string or None.
-    """
+def _parse_date(value: Any):
+    """Parse a cell value into a datetime, or None if it is not a date."""
     if pd.isna(value):
         return None
     if isinstance(value, datetime):
-        return value.strftime("%Y-%m-%d")
-    if hasattr(value, "year"):
-        return value.strftime("%Y-%m-%d")
-    return str(value).strip()
+        return value
+    if hasattr(value, "year") and hasattr(value, "month") and hasattr(value, "day"):
+        try:
+            return datetime(value.year, value.month, value.day)
+        except (ValueError, TypeError):
+            pass
+    s = str(value).strip()
+    if not s:
+        return None
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    # Last resort: let pandas try, but reject anything it cannot parse.
+    try:
+        ts = pd.to_datetime(s, errors="coerce")
+        if pd.isna(ts):
+            return None
+        return ts.to_pydatetime()
+    except (ValueError, TypeError):
+        return None
+
+
+def _check_date_value(value: Any) -> bool:
+    """Return True if value can be interpreted as a date in any accepted form."""
+    return _parse_date(value) is not None
+
+
+def _normalize_date_value(value: Any) -> str | None:
+    """Convert a cell value to a YYYY-MM-DD string, or None if null/invalid."""
+    dt = _parse_date(value)
+    return dt.strftime("%Y-%m-%d") if dt is not None else None
+
+
+# Synonyms clients commonly use, mapped to the canonical allowed values.
+# Matching is case-insensitive; exact and case-folded matches are handled
+# automatically, so this only needs the genuine aliases.
+ENUM_ALIASES: dict[str, dict[str, str]] = {
+    "Status_Reported":   {"amber": "Yellow", "g": "Green", "y": "Yellow", "r": "Red"},
+    "Reported_Status":   {"amber": "Yellow", "g": "Green", "y": "Yellow", "r": "Red"},
+    "Priority_Classification": {
+        "p0": "Critical", "p1": "High", "p2": "Medium", "p3": "Low",
+        "p0 - critical": "Critical", "p1 - high": "High",
+        "p2 - medium": "Medium", "p3 - low": "Low",
+        "p0-critical": "Critical", "p1-high": "High",
+        "p2-medium": "Medium", "p3-low": "Low",
+        "crit": "Critical", "med": "Medium",
+    },
+    "Decision_Made":     {"yes": "Y", "no": "N", "true": "Y", "false": "N"},
+    "Milestone_At_Risk": {"yes": "Y", "no": "N", "true": "Y", "false": "N"},
+    "Leadership_Aware":  {"yes": "Y", "no": "N", "true": "Y", "false": "N"},
+    "Escalation_Category": {"resourcing": "Resource"},
+    "Status":            {"at risk": "At-Risk"},  # DEPENDENCIES tab
+}
+
+
+def _normalize_enum(col: str, value: Any, allowed: list[str]) -> str | None:
+    """
+    Resolve a cell value to its canonical allowed value, or None if it cannot
+    be matched. Tries: exact match, alias map, then case-insensitive match.
+    """
+    s = str(value).strip()
+    if s in allowed:
+        return s
+    low = s.lower()
+    alias = ENUM_ALIASES.get(col, {}).get(low)
+    if alias is not None:
+        return alias
+    for a in allowed:
+        if a.lower() == low:
+            return a
+    return None
 
 
 def _validate_tab_columns(
@@ -481,7 +529,7 @@ def _validate_enum_columns(
             row_num = i + 2
             if pd.isna(value) or str(value).strip() == "":
                 continue  # nulls in optional enum columns are allowed
-            if str(value).strip() not in allowed:
+            if _normalize_enum(col, value, allowed) is None:
                 errors.append(
                     f"Tab '{tab_name}', row {row_num}, column '{col}': "
                     f"'{value}' is not an allowed value. "
@@ -653,6 +701,15 @@ def _normalize_dataframe(df: pd.DataFrame, schema: TabSchema) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].apply(
                 lambda v: _normalize_date_value(v) if not pd.isna(v) else None
+            )
+    # Canonicalize enum values (e.g. 'Amber' -> 'Yellow', 'Yes' -> 'Y') so the
+    # scoring engine always receives the exact allowed vocabulary.
+    enum_map = {**schema.enum_columns, **schema.optional_enum_columns}
+    for col, allowed in enum_map.items():
+        if col in df.columns:
+            df[col] = df[col].apply(
+                lambda v, c=col, a=allowed: (_normalize_enum(c, v, a) or v)
+                if (not pd.isna(v) and str(v).strip() != "") else v
             )
     return df
 

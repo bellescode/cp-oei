@@ -328,9 +328,13 @@ def test_null_in_required_field_names_row_and_column(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def test_invalid_date_format_names_tab_row_column(tmp_path: Path) -> None:
-    """A date value that is not YYYY-MM-DD must be caught and named precisely."""
+    """A genuinely invalid date must be caught and named precisely.
+
+    Note: common human formats (e.g. 01/01/2026) are now accepted and
+    normalized to YYYY-MM-DD; only unparseable/impossible dates are rejected.
+    """
     bad_df = _make_initiatives_df().copy()
-    bad_df.loc[0, "Start_Date"] = "01/01/2026"  # US format, not ISO
+    bad_df.loc[0, "Start_Date"] = "2026-13-45"  # impossible month/day
     path = _write_workbook(tmp_path, overrides={TAB_INITIATIVES: bad_df})
     result = validate_workbook(path)
     assert result.valid is False
@@ -506,7 +510,7 @@ def test_metadata_invalid_date_caught(tmp_path: Path) -> None:
     """An invalid date in a METADATA date field must be caught."""
     bad_meta = pd.DataFrame([
         ["Client_Name", "Acme Corporation"],
-        ["Reporting_Period_Start", "May 2026"],  # not YYYY-MM-DD
+        ["Reporting_Period_Start", "2026-13-45"],  # impossible date
         ["Reporting_Period_End", "2026-05-31"],
         ["Submitted_By", "Jane Doe"],
         ["Submission_Date", "2026-06-01"],
