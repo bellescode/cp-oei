@@ -1,0 +1,73 @@
+# deploy/cpoi.service
+# systemd unit file for the CPOI Streamlit dashboard.
+#
+# Installation (on Vultr server, as root):
+#   cp deploy/cpoi.service /etc/systemd/system/cpoi.service
+#   systemctl daemon-reload
+#   systemctl enable cpoi
+#   systemctl start cpoi
+#   systemctl status cpoi
+#
+# The service runs as the dedicated 'cpoi' user (never root).
+# Secrets are injected by infisical run -- so the process never sees
+# plaintext credentials in the environment directly.
+#
+# Prerequisites:
+#   - System user 'cpoi' created: useradd -r -s /sbin/nologin cpoi
+#   - Application installed at /opt/cpoi
+#   - Python venv at /opt/cpoi/venv
+#   - infisical CLI installed at /usr/local/bin/infisical
+#   - Infisical project and secrets configured (see deploy/DEPLOY.md)
+#   - Intake files directory: /var/cpoi/intake_files (owned by cpoi)
+#   - Database directory: /var/cpoi/data (owned by cpoi)
+
+[Unit]
+Description=CPOI Platform -- Streamlit Internal Admin Dashboard
+Documentation=file:///opt/cpoi/docs/cpoi-sdlc-spec.md
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=cpoi
+Group=cpoi
+WorkingDirectory=/opt/cpoi
+
+# infisical run injects CPOI_DB_KEY and SENDGRID_API_KEY into the process
+# environment from Infisical without writing them to disk or the journal.
+# Replace YOUR_INFISICAL_PROJECT_ID with the actual project ID.
+ExecStart=/usr/local/bin/infisical run \
+    --projectId=74a4e794-1ee7-4ceb-8c06-eef02b4a5286 \
+    --env=prod \
+    -- \
+    /opt/cpoi/venv/bin/streamlit run dashboard/app.py \
+    --server.port=8501 \
+    --server.address=127.0.0.1 \
+    --server.headless=true \
+    --server.enableCORS=false \
+    --server.enableXsrfProtection=true
+
+# Override database and intake paths to the persistent encrypted volume.
+Environment=CPOI_DB_PATH=/var/cpoi/data/cpoi.db
+Environment=CPOI_INTAKE_DIR=/var/cpoi/intake_files
+
+# Never log secrets to the journal.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cpoi
+
+# Harden the process: restrict filesystem access.
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/cpoi
+NoNewPrivileges=true
+
+# Restart policy: restart on failure, back off after repeated failures.
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

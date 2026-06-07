@@ -1,0 +1,328 @@
+{#
+  oei_snapshot.html.j2
+  CPOI Platform -- OEI Snapshot Report Template (12 sections)
+
+  Populated by: reports/generator.py with a SnapshotReportContext dict.
+  Rendered by:  Jinja2 Environment (undefined=StrictUndefined).
+  Consumed by:  reports/builder.py (docx) and reports/builder.py (pdf).
+
+  Fixed sections: populated from database values in context dict.
+  Narrative sections: populated by reports/narrator.py before render.
+    All narrative keys must contain real text (50-300 words).
+    Any NARRATIVE_PLACEHOLDER__ sentinel in the rendered output causes
+    reports/validator.validate_no_unfilled_placeholders() to reject the
+    document before files are written.
+
+  Watermark fields (embedded on every page footer):
+    {{ client_name }} | {{ sponsor_name }} | {{ report_date }} | {{ report_id }}
+
+  Classification band descriptions (from scoring spec Part 1):
+    0-20   Low Risk
+    21-40  Moderate
+    41-60  Elevated
+    61-80  High Risk
+    81-100 Critical
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="report-id" content="{{ report_id }}" />
+  <meta name="report-type" content="oei_snapshot" />
+  <meta name="client-name" content="{{ client_name }}" />
+  <meta name="sponsor-name" content="{{ sponsor_name }}" />
+  <meta name="report-date" content="{{ report_date }}" />
+  <meta name="generated-at" content="{{ generated_at }}" />
+  <title>OEI Snapshot Report -- {{ client_name }} -- {{ report_date }}</title>
+</head>
+<body>
+
+{# =========================================================================
+   COVER PAGE
+   ========================================================================= #}
+<section id="cover" data-section="cover" class="report-cover">
+  <div class="firm-name">CRITERION PARTNERS</div>
+  <div class="report-title">Operational Executive Intelligence</div>
+  <div class="report-subtitle">OEI Snapshot Report</div>
+  <div class="cover-divider"></div>
+  <table class="cover-meta">
+    <tbody>
+      <tr>
+        <td class="meta-label">Prepared For</td>
+        <td class="meta-value">{{ sponsor_name }}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Organization</td>
+        <td class="meta-value">{{ client_name }}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Engagement Type</td>
+        <td class="meta-value">OEI Snapshot Assessment</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Reporting Period</td>
+        <td class="meta-value">{{ reporting_period_start }} to {{ reporting_period_end }}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Report Date</td>
+        <td class="meta-value">{{ report_date }}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Report ID</td>
+        <td class="meta-value">{{ report_id }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="cover-confidentiality">
+    Prepared exclusively for {{ sponsor_name }} -- Confidential<br />
+    This report and its contents are the proprietary work product of
+    Criterion Partners. Distribution requires written authorization
+    from the Managing Partner.
+  </div>
+</section>
+
+{# =========================================================================
+   SECTION 1 -- ENGAGEMENT OVERVIEW
+   ========================================================================= #}
+<section id="engagement-overview" data-section="engagement_overview" class="report-section">
+  <h2>Engagement Overview</h2>
+  <table class="data-table">
+    <tbody>
+      <tr>
+        <td class="field-label">Engagement Type</td>
+        <td>OEI Snapshot</td>
+      </tr>
+      <tr>
+        <td class="field-label">Engagement Start Date</td>
+        <td>{{ engagement_start_date }}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Reporting Period</td>
+        <td>{{ reporting_period_start }} to {{ reporting_period_end }}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Data Submission Date</td>
+        <td>{{ submitted_at }}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Submission Reference</td>
+        <td>{{ submission_id }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="section-note">
+    This OEI Snapshot provides a point-in-time assessment of the
+    organization's operational intelligence posture across five
+    dimensions. Scores are derived from the submitted operational
+    telemetry data. All dimension and composite scores are expressed
+    on a 0-100 scale where higher scores indicate higher operational risk.
+  </p>
+</section>
+
+{# =========================================================================
+   SECTION 2 -- OEI COMPOSITE SCORE
+   ========================================================================= #}
+<section id="oei-composite" data-section="oei_composite" class="report-section">
+  <h2>OEI Composite Score</h2>
+  <div class="composite-score-display">
+    <span class="score-value composite" data-classification="{{ composite_class }}">{{ oei_composite_score }}</span>
+    <span class="score-classification">{{ composite_class }}</span>
+  </div>
+  <p class="score-description">{{ composite_description }}</p>
+  {% if prior_composite_score is not none %}
+  <table class="data-table score-movement">
+    <tbody>
+      <tr>
+        <td class="field-label">Prior Period Score</td>
+        <td>{{ prior_composite_score }}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Movement</td>
+        <td class="score-delta" data-direction="{{ score_direction }}">
+          {% if score_delta > 0 %}+{{ score_delta }} (worsened)
+          {% elif score_delta < 0 %}{{ score_delta }} (improved)
+          {% else %}0 (unchanged)
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+  {% if has_override %}
+  <p class="override-footnote">{{ override_footnote }}</p>
+  {% endif %}
+  <div class="score-band-reference">
+    <h3>Score Band Reference</h3>
+    <table class="data-table band-table">
+      <thead>
+        <tr>
+          <th>Range</th>
+          <th>Classification</th>
+          <th>Plain Language</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="band-low"><td>0-20</td><td>Low Risk</td><td>Systems are functioning with adequate visibility and governance</td></tr>
+        <tr class="band-moderate"><td>21-40</td><td>Moderate</td><td>Manageable gaps exist; require monitoring but not immediate action</td></tr>
+        <tr class="band-elevated"><td>41-60</td><td>Elevated</td><td>Structural gaps are present; execution risk is increasing</td></tr>
+        <tr class="band-high"><td>61-80</td><td>High Risk</td><td>Material operational gaps; financial exposure is probable without intervention</td></tr>
+        <tr class="band-critical"><td>81-100</td><td>Critical</td><td>Systemic failure conditions; financial exposure is active or imminent</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# =========================================================================
+   SECTIONS 3-7 -- DIMENSION SCORE CARDS (one per dimension)
+   ========================================================================= #}
+{% for dim in dimensions %}
+<section id="dimension-{{ dim.dimension_id }}" data-section="dimension_{{ dim.dimension_id }}" class="report-section dimension-card">
+  <h2>Dimension {{ dim.dimension_id }}: {{ dim.name }}</h2>
+  <div class="dimension-score-row">
+    <span class="score-value dimension" data-classification="{{ dim.classification }}">{{ dim.score }}</span>
+    <span class="score-classification">{{ dim.classification }}</span>
+    {% if dim.delta is not none %}
+    <span class="score-delta" data-direction="{{ 'worsened' if dim.delta > 0 else ('improved' if dim.delta < 0 else 'unchanged') }}">
+      {% if dim.delta > 0 %}+{{ dim.delta }}
+      {% elif dim.delta < 0 %}{{ dim.delta }}
+      {% else %}No change
+      {% endif %}
+      vs prior period
+    </span>
+    {% endif %}
+  </div>
+  <p class="dimension-description">{{ dim.description }}</p>
+  <h3>Sub-Category Impact Indicators</h3>
+  <table class="data-table sub-category-table">
+    <thead>
+      <tr>
+        <th>Sub-Category</th>
+        <th>Impact</th>
+        <th>Score</th>
+        <th>Interpretation</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sc in dim.sub_categories %}
+      <tr class="impact-{{ sc.impact | lower }}">
+        <td>{{ sc.name }}{% if sc.is_missing_data %} <span class="missing-data-flag">[Missing Data Default]</span>{% endif %}</td>
+        <td class="impact-label">{{ sc.impact }}</td>
+        <td>{{ sc.score }}</td>
+        <td>{{ sc.interpretation }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+
+{# =========================================================================
+   SECTION 8 -- SIGNAL READINGS TABLE
+   ========================================================================= #}
+<section id="signal-readings" data-section="signal_readings" class="report-section">
+  <h2>Signal Readings</h2>
+  <p class="section-note">
+    Twelve operational signals were calculated from the submitted data.
+    Signals are grouped by OEI dimension. Threshold breach indicates
+    the signal value has exceeded the watch-level threshold for that signal.
+  </p>
+  <table class="data-table signal-table">
+    <thead>
+      <tr>
+        <th>Signal</th>
+        <th>Measured Value</th>
+        <th>Watch Threshold</th>
+        <th>Breach</th>
+        <th>Severity</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sig in signal_readings %}
+      <tr class="severity-{{ sig.severity }}">
+        <td>{{ sig.display_name }}</td>
+        <td class="numeric">{{ "%.4f" | format(sig.signal_value) }}</td>
+        <td class="numeric">{{ "%.4f" | format(sig.threshold_value) }}</td>
+        <td class="breach-indicator">{{ "Yes" if sig.threshold_breached else "No" }}</td>
+        <td class="severity-label severity-{{ sig.severity }}">{{ sig.severity | upper }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{# =========================================================================
+   SECTION 9 -- EXECUTIVE SUMMARY (AI NARRATIVE)
+   ========================================================================= #}
+<section id="executive-summary" data-section="executive_summary" class="report-section narrative-section">
+  <h2>Executive Summary</h2>
+  <div class="narrative-body">
+    {{ narrative_executive_summary }}
+  </div>
+</section>
+
+{# =========================================================================
+   SECTION 10 -- KEY FINDINGS (AI NARRATIVE)
+   ========================================================================= #}
+<section id="key-findings" data-section="key_findings" class="report-section narrative-section">
+  <h2>Key Findings</h2>
+  <div class="narrative-body">
+    {{ narrative_key_findings }}
+  </div>
+</section>
+
+{# =========================================================================
+   SECTION 11 -- RECOMMENDED FOCUS AREAS (AI NARRATIVE)
+   ========================================================================= #}
+<section id="recommended-focus" data-section="recommended_focus" class="report-section narrative-section">
+  <h2>Recommended Focus Areas</h2>
+  <div class="narrative-body">
+    {{ narrative_recommended_focus }}
+  </div>
+</section>
+
+{# =========================================================================
+   SECTION 12 -- ENGAGEMENT INTELLIGENCE NOTES (conditional)
+   Only rendered when qualitative_notes list is non-empty.
+   Managing Partner controls which journal entries surface here.
+   Journal entries are never shown to the client in raw form.
+   ========================================================================= #}
+{% if qualitative_notes %}
+<section id="intelligence-notes" data-section="intelligence_notes" class="report-section">
+  <h2>Engagement Intelligence Notes</h2>
+  <p class="section-note">
+    The following observations were recorded during the engagement period
+    and inform the findings presented in this report.
+  </p>
+  {% for note in qualitative_notes %}
+  <div class="journal-entry materiality-{{ note.materiality | lower }}">
+    <div class="journal-meta">
+      <span class="journal-date">{{ note.entry_date }}</span>
+      <span class="journal-type">{{ note.entry_type }}</span>
+      {% if note.program_reference and note.program_reference != "General" %}
+      <span class="journal-program">Re: {{ note.program_reference }}</span>
+      {% endif %}
+      <span class="journal-materiality">Materiality: {{ note.materiality }}</span>
+    </div>
+    <div class="journal-text">{{ note.intelligence_note }}</div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+{# =========================================================================
+   PAGE FOOTER -- WATERMARK (appears on every page via builder logic)
+   The builder inserts this footer text on every page of the docx/pdf.
+   ========================================================================= #}
+<footer id="report-footer" data-section="watermark" class="report-footer">
+  <span class="watermark-text">
+    Prepared exclusively for {{ sponsor_name }} -- Confidential |
+    {{ client_name }} | {{ report_date }} | Report ID: {{ report_id }}
+  </span>
+  <span class="confidentiality-statement">
+    Criterion Partners Operational Executive Intelligence --
+    Proprietary and Confidential. Not for distribution.
+  </span>
+</footer>
+
+</body>
+</html>

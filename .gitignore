@@ -1,0 +1,74 @@
+# CPOI Platform -- .gitignore
+# Never commit secrets, encrypted database files, intake files, or build artifacts.
+
+# --- Secrets and environment ---
+.env
+.env.*
+*.key
+*.pem
+*.p12
+infisical.json
+
+# --- Local tooling / build artifacts ---
+.claude/settings.local.json
+*.tar.gz
+*.zip
+
+# --- Database files ---
+*.db
+*.db-shm
+*.db-wal
+cpoi.db
+
+# --- Client intake files (stored on encrypted volume, not in repo) ---
+intake_files/
+intake_uploads/
+
+# --- Sample output and generated reports (not source-controlled) ---
+sample_output/
+reports_output/
+*.pdf
+*.docx
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+pip-wheel-metadata/
+*.whl
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+.env/
+
+# --- pytest ---
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+coverage.xml
+*.coveragerc
+
+# --- Streamlit ---
+.streamlit/secrets.toml
+
+# --- OS artifacts ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor artifacts ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

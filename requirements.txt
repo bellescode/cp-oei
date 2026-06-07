@@ -1,0 +1,31 @@
+# CPOI Platform — Pinned Dependencies
+# Update version pins only with a documented rationale and re-run of all tests.
+
+# --- Session 1: Database + Intake ---
+sqlcipher3==0.6.2          # SQLCipher AES-256 encrypted SQLite
+openpyxl==3.1.5            # Excel intake read/write
+pytest==9.0.3              # Unit testing
+
+# --- Session 2: Scoring Engine ---
+pandas>=2.2,<3.0           # Dataframe operations for signal calculation
+numpy>=1.26,<3.0           # Numerical operations
+
+# --- Session 3: Alerts ---
+sendgrid>=6.11,<7.0        # SendGrid email delivery
+
+# --- Session 4: Report Generation ---
+python-docx>=1.1,<2.0      # .docx report generation
+jinja2>=3.1,<4.0           # Template population
+matplotlib>=3.8,<4.0       # Score trajectory charts
+reportlab>=4.1,<5.0        # PDF generation
+
+# --- Session 5: Dashboard ---
+streamlit>=1.35,<2.0       # Internal admin dashboard
+
+# --- Client Portal: MFA + secure messaging ---
+pyotp>=2.9,<3.0            # TOTP (RFC 6238) for OEIL portal MFA; pure-python, vetted
+qrcode>=7.4,<9.0           # TOTP enrollment QR (SVG factory; no Pillow dependency)
+cryptography>=42.0,<46.0   # AES-256-GCM application-layer encryption for portal messages
+
+# --- Cross-session utilities ---
+python-dotenv>=1.0,<2.0    # Local dev env var loading (never committed to version control)

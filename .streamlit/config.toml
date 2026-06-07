@@ -1,0 +1,21 @@
+# CPOI Platform -- Streamlit base theme
+# Brand DNA: Criterion Partners
+#   Navy   #2E4A6A  (primary brand / headings accent)
+#   Gold   #C9A455  (accent / interactive)
+#   White  #FFFFFF
+# Fonts: Cormorant Garamond (display), DM Sans (body) -- loaded via theme.py CSS.
+
+[theme]
+primaryColor = "#C9A455"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F2EA"
+textColor = "#1F2A37"
+font = "sans serif"
+
+[server]
+headless = true
+enableXsrfProtection = true
+enableCORS = false
+
+[browser]
+gatherUsageStats = false

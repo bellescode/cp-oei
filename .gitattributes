@@ -1,0 +1,9 @@
+# Normalize line endings to LF in the repository so files run correctly on
+# the Linux (Vultr) server regardless of the editing OS.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.gz binary
+*.zip binary
