@@ -37,7 +37,9 @@ from dashboard.login import render_login
 from dashboard.views import (
     mp_home, client_management, client_overview, client_profile,
     data_intake, report_center, engagement_journal, audit_log, mp_settings,
+    mp_messages,
 )
+from dashboard import messaging
 from dashboard.client import (
     client_home, client_submit, client_reports, client_messages, client_account,
 )
@@ -85,6 +87,11 @@ with st.sidebar:
 # Role-based navigation
 # ---------------------------------------------------------------------------
 if role == "mp":
+    try:
+        mp_unread = messaging.total_unread_mp()
+    except Exception:
+        mp_unread = 0
+    mp_msg_title = f"Messages  \U0001F534 {mp_unread}" if mp_unread else "Messages"
     keyed = {
         "home":       st.Page(mp_home.render,            title="Overview",           url_path="overview", default=True),
         "overview":   st.Page(client_overview.render,    title="Client Portfolio",   url_path="portfolio"),
@@ -92,16 +99,23 @@ if role == "mp":
         "management": st.Page(client_management.render,  title="Client Management",  url_path="client-management"),
         "intake":     st.Page(data_intake.render,        title="Data Intake",        url_path="data-intake"),
         "reports":    st.Page(report_center.render,      title="Report Center",      url_path="report-center"),
+        "messages":   st.Page(mp_messages.render,        title=mp_msg_title,         url_path="mp-messages"),
         "journal":    st.Page(engagement_journal.render, title="Engagement Journal", url_path="engagement-journal"),
         "audit":      st.Page(audit_log.render,          title="Audit Log",          url_path="audit-log"),
         "settings":   st.Page(mp_settings.render,        title="Settings",           url_path="settings"),
     }
 else:
+    try:
+        _cid = st.session_state.get("auth_client_id")
+        cl_unread = messaging.unread_count(_cid, "client") if _cid else 0
+    except Exception:
+        cl_unread = 0
+    cl_msg_title = f"Messages  \U0001F534 {cl_unread}" if cl_unread else "Messages"
     keyed = {
         "home":     st.Page(client_home.render,     title="Dashboard",   url_path="dashboard", default=True),
         "submit":   st.Page(client_submit.render,   title="Submit Data", url_path="submit-data"),
         "reports":  st.Page(client_reports.render,  title="Reports",     url_path="my-reports"),
-        "messages": st.Page(client_messages.render, title="Messages",    url_path="messages"),
+        "messages": st.Page(client_messages.render, title=cl_msg_title,  url_path="messages"),
         "account":  st.Page(client_account.render,  title="Account",     url_path="account"),
     }
 

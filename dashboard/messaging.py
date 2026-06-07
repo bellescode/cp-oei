@@ -108,3 +108,25 @@ def unread_count(client_id: str, reader_role: str) -> int:
         return row[0] if row else 0
     finally:
         conn.close()
+
+
+def total_unread_mp() -> int:
+    """Total messages across all clients not yet read by the Managing Partner."""
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT COUNT(*) FROM messages WHERE read_by_mp = 0").fetchone()
+        return row[0] if row else 0
+    finally:
+        conn.close()
+
+
+def unread_by_client_for_mp() -> dict:
+    """Map of client_id -> unread count for the Managing Partner."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT client_id, COUNT(*) FROM messages WHERE read_by_mp = 0 GROUP BY client_id"
+        ).fetchall()
+        return {r[0]: r[1] for r in rows}
+    finally:
+        conn.close()
