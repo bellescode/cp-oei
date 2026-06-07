@@ -186,11 +186,12 @@ def _forgot_flow() -> None:
         if st.button("Send reset code", key="reset_send"):
             try:
                 auth.start_password_reset(r_email)
-            except ValueError as exc:
-                st.error(str(exc))
-                return
             except Exception:
-                st.error("Could not send the reset email. Contact Criterion Partners.")
+                # Never expose server/email configuration details to the client.
+                st.error(
+                    "We're unable to send a reset email right now. Please contact "
+                    "Criterion Partners at intelligence@criterion-partners.com."
+                )
                 return
             # Neutral message regardless of whether the email exists.
             st.session_state["reset_stage"] = "verify"

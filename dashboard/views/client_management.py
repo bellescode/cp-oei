@@ -163,8 +163,11 @@ def _portal_account(client: dict) -> None:
                 try:
                     send_client_invite(email.strip().lower(), client["client_name"], portal_url, password)
                     st.success("Invite email sent.")
-                except Exception as exc:
-                    st.warning(f"Login created, but the invite email failed: {exc}")
+                except Exception:
+                    st.warning(
+                        "Login created, but the invite email could not be sent "
+                        "(check the SendGrid configuration). Share the credentials above manually."
+                    )
             st.rerun()
     else:
         status = "Active" if account["is_active"] else "Inactive"

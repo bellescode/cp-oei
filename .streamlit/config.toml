@@ -17,5 +17,11 @@ headless = true
 enableXsrfProtection = true
 enableCORS = false
 
+[client]
+# Hide Python tracebacks from the UI. Errors are still written to the server
+# logs (journalctl / nohup.out); users see a clean, generic message instead.
+showErrorDetails = "none"
+toolbarMode = "minimal"
+
 [browser]
 gatherUsageStats = false

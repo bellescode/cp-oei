@@ -75,8 +75,8 @@ h1, h2, h3, h4, .cp-display {{
 }}
 h1 {{ font-weight: 700; }}
 
-/* Tighten Streamlit's default top padding */
-.block-container {{ padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1300px; }}
+/* Give the branded top bar room so it isn't clipped by Streamlit's header */
+.block-container {{ padding-top: 4rem; padding-bottom: 3rem; max-width: 1300px; }}
 
 /* Primary buttons in brand gold */
 .stButton > button[kind="primary"], .stFormSubmitButton > button {{
@@ -106,6 +106,19 @@ h1 {{ font-weight: 700; }}
   color: {WHITE} !important;
 }}
 [data-testid="stSidebarNav"] a span {{ color: #EAF0F7 !important; }}
+/* Sidebar buttons (e.g. Sign out): light button with dark text so it stays legible
+   against the navy sidebar despite the global light text color above. */
+[data-testid="stSidebar"] .stButton > button {{
+  background: {WHITE};
+  color: {INK} !important;
+  border: 1px solid var(--cp-gold);
+  font-weight: 600;
+}}
+[data-testid="stSidebar"] .stButton > button:hover {{
+  background: {CREAM};
+  color: {NAVY} !important;
+}}
+[data-testid="stSidebar"] .stButton > button * {{ color: {INK} !important; }}
 
 /* Brand header bar */
 .cp-topbar {{
