@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard import crypto, messaging
+from dashboard import messaging
 from dashboard.theme import NAVY, GOLD, CREAM
 
 
@@ -30,12 +30,6 @@ def _bubble(label: str, body: str, when: str, mine: bool) -> str:
 
 def render_thread(client_id: str, viewer_role: str, viewer_label: str, key_prefix: str) -> None:
     """Render the secure thread for a client and a compose box for the viewer."""
-    if not crypto.encryption_available():
-        st.caption(
-            "Note: messages are protected by database encryption at rest. Set CPOI_MESSAGE_KEY "
-            "on the server to add application-layer encryption."
-        )
-
     messaging.mark_thread_read(client_id, viewer_role)
     thread = messaging.get_thread(client_id)
 
