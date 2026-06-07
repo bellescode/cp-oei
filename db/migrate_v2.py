@@ -34,6 +34,7 @@ _CLIENT_COLUMNS: list[tuple[str, str]] = [
     ("executive_sponsor",     "TEXT"),
     ("alert_recipient_email", "TEXT"),
     ("engagement_notes",      "TEXT"),
+    ("portal_access_expires", "DATE"),
 ]
 
 # client_users backs the client portal. Passwords are stored as PBKDF2 hashes
@@ -87,6 +88,33 @@ CREATE TABLE IF NOT EXISTS admin_credentials (
     reset_token_hash    TEXT,
     reset_token_expires TIMESTAMP,
     updated_at          TIMESTAMP
+);
+"""
+
+# Per-client engagement milestone overrides (the rest are auto-derived from data).
+_ENGAGEMENT_MILESTONES_DDL = """
+CREATE TABLE IF NOT EXISTS engagement_milestones (
+    client_id      TEXT NOT NULL REFERENCES clients(client_id),
+    milestone_key  TEXT NOT NULL,
+    status         TEXT NOT NULL DEFAULT 'pending'
+                       CHECK (status IN ('pending','active','complete')),
+    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (client_id, milestone_key)
+);
+"""
+
+# Invoice line items per client (Snapshot uses a 30/40/30 schedule).
+_INVOICES_DDL = """
+CREATE TABLE IF NOT EXISTS invoices (
+    invoice_id   TEXT PRIMARY KEY,
+    client_id    TEXT NOT NULL REFERENCES clients(client_id),
+    label        TEXT NOT NULL,
+    amount       DECIMAL,
+    status       TEXT NOT NULL DEFAULT 'due'
+                     CHECK (status IN ('paid','due','overdue')),
+    due_date     DATE,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -162,6 +190,17 @@ def run_migration() -> list[str]:
         conn.execute(_ADMIN_CREDENTIALS_DDL)
         if admin_before is None:
             applied.append("table:admin_credentials")
+
+        for tname, ddl in (
+            ("engagement_milestones", _ENGAGEMENT_MILESTONES_DDL),
+            ("invoices", _INVOICES_DDL),
+        ):
+            tbefore = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (tname,)
+            ).fetchone()
+            conn.execute(ddl)
+            if tbefore is None:
+                applied.append(f"table:{tname}")
 
         if applied:
             write_audit_log(

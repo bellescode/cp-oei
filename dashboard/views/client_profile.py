@@ -25,7 +25,7 @@ from datetime import date, datetime, timezone
 import pandas as pd
 import streamlit as st
 
-from dashboard import auth, nav
+from dashboard import auth, nav, milestones, billing
 from dashboard.db_helper import get_connection, run_query
 from dashboard.theme import top_bar, page_title, badge, BAND_BG, NAVY, GOLD
 from db.audit import write_audit_log
@@ -401,8 +401,72 @@ def render() -> None:
     _alerts(client["client_id"], client["client_name"])
     _anomaly_checklist(client["client_id"])
     _journal(client["client_id"])
+    _engagement_admin(client)
     _messages(client["client_id"])
     _quick_actions(client["client_id"], sub_id)
+
+
+def _engagement_admin(client: dict) -> None:
+    cid = client["client_id"]
+    st.markdown("#### Engagement Milestones & Billing")
+
+    with st.expander("Milestones (what the client sees on their Engagement tab)"):
+        steps = milestones.get_tracker(client)
+        with st.form(f"ms_form_{cid}"):
+            choices = {}
+            for s in steps:
+                choices[s["key"]] = st.selectbox(
+                    s["label"], milestones.STATUS_OPTIONS,
+                    index=milestones.STATUS_OPTIONS.index(s["status"])
+                    if s["status"] in milestones.STATUS_OPTIONS else 0,
+                    key=f"ms_{cid}_{s['key']}",
+                )
+            if st.form_submit_button("Save milestones", type="primary"):
+                for key, status in choices.items():
+                    milestones.set_milestone(cid, key, status)
+                st.success("Milestones updated.")
+                st.rerun()
+
+    with st.expander("Invoices / billing status"):
+        invoices = billing.list_invoices(cid)
+        for inv in invoices:
+            c1, c2, c3, c4 = st.columns([3, 1.3, 1.6, 1])
+            c1.markdown(f"**{inv['label']}**")
+            c2.caption(f"${inv['amount']:,.0f}" if inv.get("amount") is not None else "")
+            new_status = c3.selectbox(
+                "status", billing.STATUS_OPTIONS,
+                index=billing.STATUS_OPTIONS.index(inv["status"]),
+                key=f"inv_{inv['invoice_id']}", label_visibility="collapsed",
+            )
+            if new_status != inv["status"]:
+                billing.set_status(inv["invoice_id"], new_status)
+                st.rerun()
+            if c4.button("Delete", key=f"invdel_{inv['invoice_id']}"):
+                billing.delete_invoice(inv["invoice_id"])
+                st.rerun()
+
+        st.divider()
+        col_a, col_b = st.columns(2)
+        with col_a:
+            with st.form(f"inv_add_{cid}"):
+                st.caption("Add an invoice line")
+                label = st.text_input("Label", key=f"invlbl_{cid}")
+                amount = st.number_input("Amount ($)", min_value=0.0, step=500.0, key=f"invamt_{cid}")
+                status = st.selectbox("Status", billing.STATUS_OPTIONS, key=f"invst_{cid}")
+                if st.form_submit_button("Add line"):
+                    if label.strip():
+                        billing.add_invoice(cid, label, amount or None, status)
+                        st.rerun()
+                    else:
+                        st.error("Label is required.")
+        with col_b:
+            with st.form(f"inv_sched_{cid}"):
+                st.caption("Create Snapshot 30/40/30 schedule")
+                total = st.number_input("Total engagement value ($)", min_value=0.0,
+                                        step=500.0, value=7500.0, key=f"invtot_{cid}")
+                if st.form_submit_button("Create schedule"):
+                    billing.create_snapshot_schedule(cid, total)
+                    st.rerun()
 
 
 def _messages(cid: str) -> None:

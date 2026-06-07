@@ -40,8 +40,12 @@ from dashboard.views import (
     mp_messages,
 )
 from dashboard import messaging
+from dashboard.access import access_state
+from dashboard.db_helper import run_query
+from dashboard.theme import logo_lockup_html
 from dashboard.client import (
     client_home, client_submit, client_reports, client_messages, client_account,
+    client_engagement,
 )
 
 st.set_page_config(
@@ -67,6 +71,28 @@ if role is None:
 if role == "client" and st.session_state.get("auth_must_change"):
     client_account.render_forced_change()
     st.stop()
+
+# ---------------------------------------------------------------------------
+# Client portal access window (Snapshot: 14 days from report delivery)
+# ---------------------------------------------------------------------------
+if role == "client":
+    _crows = run_query(
+        "SELECT * FROM clients WHERE client_id = ?",
+        (st.session_state.get("auth_client_id"),),
+    )
+    if _crows and access_state(_crows[0])["state"] == "concluded":
+        st.html("<style>[data-testid='stSidebar']{display:none;}</style>")
+        st.html(f'<div class="cp-topbar" style="border:none;">{logo_lockup_html()}</div>')
+        st.html(
+            '<div class="cp-hero"><h1>This engagement has concluded</h1>'
+            '<p>Thank you for working with Criterion Partners. Your access window has ended. '
+            'Please contact us at intelligence@criterion-partners.com for further assistance.</p></div>'
+        )
+        st.write("")
+        if st.button("Sign out"):
+            auth.logout()
+            st.rerun()
+        st.stop()
 
 # ---------------------------------------------------------------------------
 # Sidebar identity + logout (shared)
@@ -112,11 +138,12 @@ else:
         cl_unread = 0
     cl_msg_title = f"Messages  \U0001F534 {cl_unread}" if cl_unread else "Messages"
     keyed = {
-        "home":     st.Page(client_home.render,     title="Dashboard",   url_path="dashboard", default=True),
-        "submit":   st.Page(client_submit.render,   title="Submit Data", url_path="submit-data"),
-        "reports":  st.Page(client_reports.render,  title="Reports",     url_path="my-reports"),
-        "messages": st.Page(client_messages.render, title=cl_msg_title,  url_path="messages"),
-        "account":  st.Page(client_account.render,  title="Account",     url_path="account"),
+        "home":       st.Page(client_home.render,       title="Dashboard",   url_path="dashboard", default=True),
+        "engagement": st.Page(client_engagement.render, title="Engagement",  url_path="engagement"),
+        "submit":     st.Page(client_submit.render,     title="Submit Data", url_path="submit-data"),
+        "reports":    st.Page(client_reports.render,    title="Reports",     url_path="my-reports"),
+        "messages":   st.Page(client_messages.render,   title=cl_msg_title,  url_path="messages"),
+        "account":    st.Page(client_account.render,    title="Account",     url_path="account"),
     }
 
 nav.register(keyed)

@@ -107,18 +107,32 @@ def _edit_engagement(client: dict) -> None:
         new_contact_email = c5.text_input("Primary contact email", value=client.get("primary_contact_email") or "", key=f"ce_{cid}")
         new_alert_email = st.text_input("Alert recipient email", value=client.get("alert_recipient_email") or "", key=f"ae_{cid}")
 
+        access_val = None
+        if client.get("portal_access_expires"):
+            try:
+                from datetime import date as _date
+                access_val = _date.fromisoformat(str(client["portal_access_expires"])[:10])
+            except ValueError:
+                access_val = None
+        new_access = st.date_input(
+            "Portal access expires (optional override; Snapshot auto-expires 14 days after report delivery)",
+            value=access_val, key=f"acc_{cid}",
+        )
+
         if st.form_submit_button("Save engagement details", type="primary"):
             run_write(
                 """
                 UPDATE clients
                 SET engagement_end_date = ?, renewal_status = ?, status = ?,
-                    primary_contact_name = ?, primary_contact_email = ?, alert_recipient_email = ?
+                    primary_contact_name = ?, primary_contact_email = ?, alert_recipient_email = ?,
+                    portal_access_expires = ?
                 WHERE client_id = ?
                 """,
                 (
                     new_end.isoformat() if new_end else None, new_renewal, new_status,
                     new_contact.strip() or None, new_contact_email.strip() or None,
-                    new_alert_email.strip() or None, cid,
+                    new_alert_email.strip() or None,
+                    new_access.isoformat() if new_access else None, cid,
                 ),
             )
             st.success("Engagement details updated.")
